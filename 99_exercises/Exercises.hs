@@ -1,6 +1,8 @@
 
 -- https://wiki.haskell.org/99_questions/1_to_10
 
+import Data.List
+
 -- 1. find last element of a list
 myLast = head . reverse
 
@@ -30,3 +32,19 @@ flatten              :: NestedList a -> [a]
 flatten (Elem x)      = [x]
 flatten (List [])     = []
 flatten (List (x:xs)) = flatten x ++ flatten (List xs)
+
+-- 8. remove duplicates without changing the order
+compress :: Eq a => [a] -> [a]
+compress [] = []
+compress [x] = [x]
+compress (x:(y:xs)) = if x == y then x : compress xs else x : compress (y : xs)
+
+-- 9. pack duplicates into sublists
+
+pack :: Eq a => [a] -> [[a]]
+pack [] = []
+pack x = fst y : pack (snd y)
+    where y = span (== head x) x
+
+-- 10. run-length encoding
+encode xs = map (\x -> (length x, head x)) $ pack xs
