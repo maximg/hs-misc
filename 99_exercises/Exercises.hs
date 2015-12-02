@@ -1,10 +1,20 @@
 
 -- https://wiki.haskell.org/99_questions/1_to_10
 
+{-# LANGUAGE TemplateHaskell #-}
+import StaticAssert
 import Data.List
+import Control.Exception
+
+test' cond = assert cond "PASS"
 
 -- 1. find last element of a list
 myLast = head . reverse
+
+-- fails with 'myLast must be imported'
+-- $(staticAssert (myLast "abcd" == "d") "myLast failed")
+
+testMyLast = test' $ myLast "abcd" == 'd'
 
 -- 2. find last but one element of a list
 myButLast = head . tail . reverse
@@ -37,14 +47,38 @@ flatten (List (x:xs)) = flatten x ++ flatten (List xs)
 compress :: Eq a => [a] -> [a]
 compress [] = []
 compress [x] = [x]
-compress (x:(y:xs)) = if x == y then x : compress xs else x : compress (y : xs)
+compress (x:(y:xs)) | (x == y)  = x : compress xs 
+                    | otherwise = x : compress (y : xs)
 
 -- 9. pack duplicates into sublists
 
 pack :: Eq a => [a] -> [[a]]
 pack [] = []
-pack x = fst y : pack (snd y)
-    where y = span (== head x) x
+pack x = fst y : pack (snd y) where
+    y = span (== head x) x
 
 -- 10. run-length encoding
 encode xs = map (\x -> (length x, head x)) $ pack xs
+
+-- 11. modified run-length encoding
+data CodedSymbol a = Single a | Multiple (Int, a)
+    deriving (Show, Eq)
+
+encodeModified xs = map f $ encode xs where
+    f (1,x) = Single x
+    f (n,x) = Multiple (n,x)
+
+testEncodeModified =
+    test' $ encodeModified "aaaabccaadeeee" ==
+        [Multiple (4,'a'), Single 'b', Multiple (2,'c'),
+         Multiple (2,'a'), Single 'd', Multiple (4,'e')]
+
+-- 12. decode run-length encoded list
+
+decodeModified xs = concatMap decodeHelper xs where
+    decodeHelper (Single x)       = [x]
+    decodeHelper (Multiple (n,x)) = replicate n x
+
+testDecodeModified = test' $ decodeModified
+    [Multiple (4,'a'), Single 'b', Multiple (2,'c'),
+    Multiple (2,'a'), Single 'd', Multiple (4,'e')] == "aaaabccaadeeee"
