@@ -61,12 +61,19 @@ pack x = fst y : pack (snd y) where
 encode xs = map (\x -> (length x, head x)) $ pack xs
 
 -- 11. modified run-length encoding
-data CodedSymbol a = Single a | Multiple (Int, a)
+data CodeSymbol a = Single a | Multiple (Int, a)
     deriving (Show, Eq)
 
-encodeModified xs = map f $ encode xs where
-    f (1,x) = Single x
-    f (n,x) = Multiple (n,x)
+encodeSymbol (1,x) = Single x
+encodeSymbol (n,x) = Multiple (n,x)
+encodeSymbol' 1 x = Single x
+encodeSymbol' n x = Multiple (n,x)
+
+decodeSymbol (Single x)       = [x]
+decodeSymbol (Multiple (n,x)) = replicate n x
+
+
+encodeModified = map encodeSymbol . encode
 
 testEncodeModified =
     test' $ encodeModified "aaaabccaadeeee" ==
@@ -75,10 +82,29 @@ testEncodeModified =
 
 -- 12. decode run-length encoded list
 
-decodeModified xs = concatMap decodeHelper xs where
-    decodeHelper (Single x)       = [x]
-    decodeHelper (Multiple (n,x)) = replicate n x
+decodeModified = concatMap decodeSymbol
 
 testDecodeModified = test' $ decodeModified
     [Multiple (4,'a'), Single 'b', Multiple (2,'c'),
     Multiple (2,'a'), Single 'd', Multiple (4,'e')] == "aaaabccaadeeee"
+
+-- 13. direct run-length encoding
+
+-- my solution, simplified after consulting the solutuions
+encodeDirect [] = []
+encodeDirect (z:zs) = f 1 z zs where
+    f n x []     = [encodeSymbol' n x]
+    f n x (y:ys) | x == y    = f (n+1) x ys
+                 | otherwise = encodeSymbol' n x : encodeDirect (y:ys)
+
+-- from the solutions page, with foldr and an as-pattern
+encodeDirect' = map encodeSymbol . foldr f [] where
+    f x [] = [(1,x)]
+    f x (y@(n,b):ys)
+        | x == b    = (n + 1, x):ys
+        | otherwise = (1,x):y:ys
+
+testEncodeDirect = 
+    test' $ encodeDirect' "aaaabccaadeeee" ==
+        [Multiple (4,'a'), Single 'b', Multiple (2,'c'),
+         Multiple (2,'a'), Single 'd', Multiple (4,'e')]
