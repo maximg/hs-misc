@@ -108,3 +108,35 @@ testEncodeDirect =
     test' $ encodeDirect' "aaaabccaadeeee" ==
         [Multiple (4,'a'), Single 'b', Multiple (2,'c'),
          Multiple (2,'a'), Single 'd', Multiple (4,'e')]
+
+-- 14. duplicate elements of a list
+dupli xs = concatMap (\x -> [x,x]) xs
+
+testDupli =
+    test' $ dupli "abcd" == "aabbccdd"
+
+-- 15. replicate elements of list given number of times
+repli xs n = concatMap (replicate n) xs
+
+testRepli =
+    test' $ repli "abcd" 3 == "aaabbbcccddd"
+
+-- 16. dron every Nth element of the list
+dropEvery [] _ = []
+dropEvery xs n | n < 1 = error "Index out of bounds"
+               | n == 1 = []
+               | otherwise = take (n-1) xs ++ dropEvery (drop n xs) n
+
+testDropEvery =
+    test' $ dropEvery "abcdef" 2 == "ace"
+
+-- 17. split a list into 2 parts
+
+split xs n = (reverse a, b) where
+    (a,b) = split' ([], xs) n 
+    split' (a,[])   _ = (a,[])
+    split' (a,b)    0 = (a,b)
+    split' (a,b:bs) n = split' (b:a,bs) (n-1)
+
+testSplit =
+    test' $ split "abcdefg" 3 == ("abc","defg")
