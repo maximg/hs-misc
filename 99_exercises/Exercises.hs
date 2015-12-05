@@ -140,3 +140,37 @@ split xs n = (reverse a, b) where
 
 testSplit =
     test' $ split "abcdefg" 3 == ("abc","defg")
+
+-- 18. slice the list
+
+slice            :: [a] -> Int -> Int -> [a]
+slice _ n k      | n < 1 || k < n = error "Index out of bounds"
+slice [] _ _     = []
+slice (x:xs) 1 1 = [x]
+slice (x:xs) 1 k = x : slice xs 1 (k-1)
+slice (x:xs) n k = slice xs (n-1) (k-1)
+
+-- with take / drop
+slice' xs n k = drop (n-1) $ take k xs
+
+testSlice =
+    test' $ slice "abcdefg" 3 5 == "cde"
+
+-- 19. rotate a list N places to the left
+
+rotate xs n = back ++ front where
+    (front, back) = split xs pos
+    pos = n `mod` length xs
+
+testRotate =
+    test' $ rotate "abcdef" (-2) == "efabcd"
+
+-- remove kth element
+
+removeAt k xs
+    | k < 1 || k > length xs = error "Index out of bounds"
+    | otherwise = (c, h ++ t) where
+        (h,(c:t)) = split xs (k-1)
+
+testRemoveAt = 
+    test' $ removeAt 3 "abcdef" == ('c',"abdef")
