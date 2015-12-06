@@ -174,3 +174,25 @@ removeAt k xs
 
 testRemoveAt = 
     test' $ removeAt 3 "abcdef" == ('c',"abdef")
+
+-- 28a. sort list according to length of sublists, placing the shortest first
+
+lsort :: [[a]] -> [[a]]
+lsort xs = map snd $ sortBy (\a b -> compare (fst a) (fst b)) $ map (\a -> (length a,a)) xs
+
+testLsort =
+    test' $ lsort ["a","cd","b","abcd"] == ["a","b","cd","abcd"]
+
+-- 28b. sort lists according to length of sublists, placing the rarest lengths first
+--lsort' :: [[a]] -> [[a]]
+lsort' xs = let
+    --sorted = sortBy (\(fa,_) (fb,_) -> fa < fb) freqs
+    --freqs = map (\(l,b) -> ((lengthFreq l),b)) lengths
+    --lengthFreq :: Int -> Int
+    --lengthFreq len = length (filter (fst . (== len)) $ lengths)
+    lengths = map (\a -> ((length a),a)) xs
+    --in map snd sorted 
+    --in map (\(l,b) -> lengthFreq l) lengths
+    --in map (lengthFreq . fst) lengths
+    in lengths
+
