@@ -6,6 +6,7 @@ import StaticAssert
 import Data.List
 import Control.Exception
 import Data.Ord (comparing)
+import Data.Function
 
 test' cond = assert cond "PASS"
 
@@ -191,3 +192,14 @@ lsort' xs = let
     lengthFreq len xs = length $ filter (\(a,_) ->  a == len) $ withLengths xs
     freqs xs = map (\(l,b) -> ((lengthFreq l xs),b)) $ withLengths xs
     in map snd $ sortOn fst $ freqs xs
+
+lfsort = concat . lsort . groupBy ((==) `on` length) . lsort
+
+-- 31. isPrime
+
+isPrime :: Integral a => a -> Bool
+isPrime n = (factors n) == [1,n] where
+    factors n = [ x | x <- [1..n], n `mod` x == 0]
+
+testIsPrime =
+   test' $ isPrime 11
