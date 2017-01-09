@@ -7,11 +7,15 @@ import Data.List
 import Control.Exception
 import Data.Ord (comparing)
 import Data.Function
+import Test.QuickCheck
 
 test' cond = assert cond "PASS"
 
 -- 1. find last element of a list
 myLast = head . reverse
+
+-- this test imposes Eq a on the list element type, not clear how to avoid this
+--testMyLast' = quickCheck (\xs -> null xs || init xs ++ [myLast xs] == xs)
 
 -- fails with 'myLast must be imported'
 -- $(staticAssert (myLast "abcd" == "d") "myLast failed")
@@ -29,6 +33,9 @@ elementAt x k | k < 1 = error "Index out of bounds"
 myLength :: [a] -> Int
 myLength [] = 0
 myLength (_:xs) = myLength xs + 1
+
+-- this test requires Show a. Why not in GHCi?
+-- testMyLength' = quickCheck (\xs -> myLength xs == length xs)
 
 -- 5. reverse a list
 myReverse :: [a] -> [a]
@@ -203,3 +210,50 @@ isPrime n = (factors n) == [1,n] where
 
 testIsPrime =
    test' $ isPrime 11
+
+-- https://en.wikibooks.org/wiki/Haskell/Monoids
+import Data.Monoid
+
+-- | Monoid under addition.
+data Sum = Sum { getSum :: Bool } deriving (Show)
+
+-- | Monoid under multiplication.
+data Product = Product { getProduct :: Bool } deriving (Show)
+
+instance Monoid (Product) where
+    mempty = Product True
+    Product x `mappend` Product y = Product (x && y)
+
+instance Monoid (Sum) where
+    mempty = Sum False
+    Sum x `mappend` Sum y = Sum (x || y)
+
+Product True <> (Product True <> Product True)
+(Product True <> Product True) <> Product True
+Product True <> mempty
+
+-- https://en.wikibooks.org/wiki/Haskell/Applicative_functors
+data Tree a = Node a [Tree a] deriving (Show)
+instance Functor Tree where
+    fmap f (Node x xs) = Node (f x) (map (fmap f) xs)
+
+fmap (+1) (Node 5 [Node 6 []])
+
+
+data MyEither a b = MyLeft a | MyRight b deriving (Show)
+instance Functor (MyEither e) where
+    fmap _ (MyLeft x)  = MyLeft x
+    fmap f (MyRight y) = MyRight (f y)
+    
+fmap (+1) (MyLeft 1)
+fmap (+1) (MyRight 2)
+
+
+-- Write a definition of (<*>) using (>>=) and fmap. Do not use do-notation.
+-- <*> :: Applicative f => f (a -> b) -> f a -> f 
+-- (>>=) :: Monad m => m a -> (a -> m b) -> m b
+-- fmap :: Functor f => (a -> b) -> f a -> f b
+
+f <*> x = f >>= (`fmap` x)
+
+
