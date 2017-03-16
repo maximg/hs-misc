@@ -8,6 +8,7 @@ import Control.Exception
 import Data.Ord (comparing)
 import Data.Function
 import Test.QuickCheck
+import Data.Monoid
 
 test' cond = assert cond "PASS"
 
@@ -212,8 +213,8 @@ testIsPrime =
    test' $ isPrime 11
 
 -- https://en.wikibooks.org/wiki/Haskell/Monoids
-import Data.Monoid
 
+{-
 -- | Monoid under addition.
 data Sum = Sum { getSum :: Bool } deriving (Show)
 
@@ -231,13 +232,14 @@ instance Monoid (Sum) where
 Product True <> (Product True <> Product True)
 (Product True <> Product True) <> Product True
 Product True <> mempty
+-}
 
 -- https://en.wikibooks.org/wiki/Haskell/Applicative_functors
 data Tree a = Node a [Tree a] deriving (Show)
 instance Functor Tree where
     fmap f (Node x xs) = Node (f x) (map (fmap f) xs)
 
-fmap (+1) (Node 5 [Node 6 []])
+--fmap (+1) (Node 5 [Node 6 []])
 
 
 data MyEither a b = MyLeft a | MyRight b deriving (Show)
@@ -245,8 +247,8 @@ instance Functor (MyEither e) where
     fmap _ (MyLeft x)  = MyLeft x
     fmap f (MyRight y) = MyRight (f y)
     
-fmap (+1) (MyLeft 1)
-fmap (+1) (MyRight 2)
+-- fmap (+1) (MyLeft 1)
+-- fmap (+1) (MyRight 2)
 
 
 -- Write a definition of (<*>) using (>>=) and fmap. Do not use do-notation.
@@ -254,6 +256,44 @@ fmap (+1) (MyRight 2)
 -- (>>=) :: Monad m => m a -> (a -> m b) -> m b
 -- fmap :: Functor f => (a -> b) -> f a -> f b
 
-f <*> x = f >>= (`fmap` x)
+-- f <*> x = f >>= (`fmap` x)
 
 
+solveRPN :: String -> Int
+solveRPN s = go [] (words s) where
+    go stack xs = case xs of
+        ("+":xs') -> case stack of
+            (x:y:rest) -> go ((x+y):rest) xs'
+            _ -> error "Invalid expression"
+        (s:xs') -> go (read s:stack) xs'
+        [] -> head stack
+
+solveRPN' :: (Num a, Read a) => String -> a
+solveRPN' = head . foldl foldingFunction [] . words
+    where
+        foldingFunction (x:y:rest) "+" = (x+y):rest
+        foldingFunction stack x = (read x):stack
+
+
+data Section = Section { getA :: Int, getB :: Int, getC :: Int } deriving (Show)
+type RoadSystem = [Section]
+
+heathrowToLondon :: RoadSystem
+heathrowToLondon = [Section 50 10 30, Section 5 90 20, Section 40 2 25, Section 10 8 0]
+
+data Label = A | B | C deriving (Show)
+type Path = [(Label, Int)]
+
+optimalPath :: RoadSystem -> Path
+optimalPath xs = let (pathA, pathB) = foldl doSection ([],[]) xs
+    in if sum (map snd pathA) < sum (map snd pathB)
+            then reverse pathA
+            else reverse pathB
+
+doSection :: (Path, Path) -> Section -> (Path, Path)
+doSection (pA, pB) (Section a b c)= let
+    pA' = if a < b + c then (A,a):pA
+                       else (C,c):(B,b):pB
+    pB' = if b < a + c then (B,b):pB
+                       else (C,c):(A,a):pA
+    in (pA',pB')
