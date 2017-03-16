@@ -7,27 +7,24 @@
 --   stack install stm random concurrent-output
 
 import Control.Concurrent.STM
+import Control.Concurrent.STM.TMVar
 import Control.Concurrent
 import System.Random
 import System.Console.Concurrent
 
 
-data Fork = MkFork Int (TVar Bool)
+data Fork = MkFork Int (TMVar ())
 
 newFork :: Int -> STM Fork
 newFork n = do
-    tv <- newTVar False
+    tv <- newTMVar ()
     return (MkFork n tv)
 
 takeFork :: Fork -> STM ()
-takeFork (MkFork n tv) = do
-    isTaken <- readTVar tv
-    check(not isTaken)
-    writeTVar tv True
+takeFork (MkFork n tv) = takeTMVar tv
 
 putDownFork :: Fork -> STM ()
-putDownFork (MkFork n tv) = do
-    writeTVar tv False
+putDownFork (MkFork n tv) = putTMVar tv ()
 
 philosopher1 :: Int -> Fork -> Fork -> IO ()
 philosopher1 n f1 f2 = do
